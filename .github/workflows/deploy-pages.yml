@@ -24,7 +24,18 @@ jobs:
       - name: Restore test source
         run: |
           cat source.part00 source.part01 source.part02 source.part03 source.part04 source.part05 | base64 -d > source.zip
-          unzip -o source.zip
+          unzip -o source.zip || true
+          test -s project.godot
+          test -s export_presets.cfg
+          test -s scenes/main.tscn
+          test -s scripts/main.gd
+          test -s scripts/world_scene.gd
+          test -s scripts/rules.gd
+          test -s scripts/save_service.gd
+          test -s scripts/content_service.gd
+          test -s content/questions.json
+          test -s content/worlds.json
+          find scripts -name '*.uid' -delete
 
       - name: Install Godot 4.5.2
         uses: chickensoft-games/setup-godot@v2
