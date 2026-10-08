@@ -23,7 +23,7 @@ jobs:
 
       - name: Restore test source
         run: |
-          base64 -d source.b64 > source.zip
+          cat source.part00 source.part01 source.part02 source.part03 source.part04 source.part05 | base64 -d > source.zip
           unzip -o source.zip
 
       - name: Install Godot 4.5.2
