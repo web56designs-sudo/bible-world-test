@@ -40,11 +40,21 @@ jobs:
           from pathlib import Path
           p = Path('scripts/main.gd')
           s = p.read_text()
-          old = '\t\t\trender_play() if rules.state != "feedback" else render_feedback()'
-          new = '\t\t\tif rules.state != "feedback":\n\t\t\t\trender_play()\n\t\t\telse:\n\t\t\t\trender_feedback()'
-          if old not in s:
-              raise SystemExit('Expected resume conditional not found')
-          p.write_text(s.replace(old, new))
+          patches = [
+              (
+                  '\t\t\trender_play() if rules.state != "feedback" else render_feedback()',
+                  '\t\t\tif rules.state != "feedback":\n\t\t\t\trender_play()\n\t\t\telse:\n\t\t\t\trender_feedback()'
+              ),
+              (
+                  '\tif screen == "play":update_hud()',
+                  '\tif screen == "play":\n\t\tupdate_hud()'
+              ),
+          ]
+          for old, new in patches:
+              if old not in s:
+                  raise SystemExit(f'Expected source pattern not found: {old!r}')
+              s = s.replace(old, new)
+          p.write_text(s)
           PY
           mkdir -p builds/web
 
@@ -66,6 +76,8 @@ jobs:
 
       - name: Configure Pages
         uses: actions/configure-pages@v5
+        with:
+          enablement: true
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
