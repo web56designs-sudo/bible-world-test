@@ -21,7 +21,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Restore test source
+      - name: Restore and patch test source
         run: |
           cat source.part00 source.part01 source.part02 source.part03 source.part04 source.part05 | base64 -d > source.zip
           unzip -o source.zip || true
@@ -36,6 +36,17 @@ jobs:
           test -s content/questions.json
           test -s content/worlds.json
           find scripts -name '*.uid' -delete
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path('scripts/main.gd')
+          s = p.read_text()
+          old = '\t\t\trender_play() if rules.state != "feedback" else render_feedback()'
+          new = '\t\t\tif rules.state != "feedback":\n\t\t\t\trender_play()\n\t\t\telse:\n\t\t\t\trender_feedback()'
+          if old not in s:
+              raise SystemExit('Expected resume conditional not found')
+          p.write_text(s.replace(old, new))
+          PY
+          mkdir -p builds/web
 
       - name: Install Godot 4.5.2
         uses: chickensoft-games/setup-godot@v2
