@@ -1,0 +1,74 @@
+lat:
+	var box := StyleBoxFlat.new()
+	box.bg_color = fill
+	box.corner_radius_top_left = 13
+	box.corner_radius_top_right = 13
+	box.corner_radius_bottom_left = 13
+	box.corner_radius_bottom_right = 13
+	box.content_margin_left = 18
+	box.content_margin_right = 18
+	box.content_margin_top = 10
+	box.content_margin_bottom = 10
+	if border.a > 0:
+		box.set_border_width_all(2)
+		box.border_color = border
+	return box
+
+func label(text: String, font_size: int = 20, color: Color = INK) -> Label:
+	var value := Label.new()
+	value.text = text
+	value.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	value.add_theme_color_override("font_color",color)
+	value.add_theme_font_size_override("font_size",font_size)
+	return value
+
+func heading(text: String, font_size: int = 31) -> Label:
+	var value := label(text,font_size)
+	value.add_theme_font_override("font",load("res://assets/Heading.ttf"))
+	return value
+
+func button(text: String, action: Callable, primary: bool = false, small: bool = false) -> Button:
+	var value := Button.new()
+	value.text = text
+	value.custom_minimum_size.y = 52 if small else 61
+	value.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	value.add_theme_stylebox_override("normal",style(INK if primary else Color("fff9ed"),Color.TRANSPARENT if primary else Color("d9cfbd")))
+	value.add_theme_stylebox_override("hover",style(Color("355560") if primary else Color("ece1cc")))
+	value.add_theme_stylebox_override("pressed",style(Color("476b75") if primary else Color("e2d0af")))
+	value.add_theme_stylebox_override("focus",style(Color.TRANSPARENT,GOLD))
+	value.add_theme_stylebox_override("disabled",style(Color("e4dac7"),Color("d9cfbd")))
+	value.add_theme_color_override("font_disabled_color",Color("78776b"))
+	value.add_theme_color_override("font_color",PAPER if primary else INK)
+	value.add_theme_color_override("font_hover_color",PAPER if primary else INK)
+	value.add_theme_color_override("font_pressed_color",PAPER if primary else INK)
+	value.add_theme_font_size_override("font_size",20)
+	value.pressed.connect(action)
+	return value
+
+func panel(top: float, scrollable: bool = false) -> VBoxContainer:
+	var bg := Panel.new()
+	bg.position = Vector2(0,top)
+	bg.size = Vector2(size.x,size.y-top)
+	var bg_style := style(PAPER)
+	bg_style.corner_radius_bottom_left = 0
+	bg_style.corner_radius_bottom_right = 0
+	bg.add_theme_stylebox_override("panel",bg_style)
+	ui.add_child(bg)
+	var margin := MarginContainer.new()
+	margin.position = Vector2(24,top+22)
+	margin.size = Vector2(size.x-48,size.y-top-38)
+	ui.add_child(margin)
+	var box := VBoxContainer.new()
+	box.add_theme_constant_override("separation",10)
+	if scrollable:
+		var scroll := ScrollContainer.new()
+		scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+		margin.add_child(scroll)
+		box.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		scroll.add_child(box)
+	else:margin.add_child(box)
+	return box
+
+func spacer(box: VBoxContainer, height: float = 8) -> void:
+	var space := Control.new()
+	space.custom_minimum_size.y
