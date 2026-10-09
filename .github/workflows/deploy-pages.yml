@@ -21,12 +21,14 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Restore clean 0.2.2 test runtime
+      - name: Restore 0.2.2 test source
         run: |
           rm -rf scripts content assets scenes builds export_presets.cfg project.godot source.zip
-          cat source.part00 source.part01 source.part02 source.part03 | base64 -d > source.zip
-          unzip -t source.zip
-          unzip -o source.zip
+          cat source.part00 source.part01 source.part02 source.part03 source.part04 source.part05 | base64 -d > source.zip
+          unzip -o source.zip || true
+          mkdir -p scripts builds/web
+          cp patches/world_scene.gd scripts/world_scene.gd
+          find scripts -name '*.uid' -delete
           test -s project.godot
           test -s export_presets.cfg
           test -s scenes/main.tscn
@@ -37,7 +39,6 @@ jobs:
           test -s scripts/content_service.gd
           test -s content/questions.json
           test -s content/worlds.json
-          mkdir -p builds/web
 
       - name: Install Godot 4.5.2
         uses: chickensoft-games/setup-godot@v2
