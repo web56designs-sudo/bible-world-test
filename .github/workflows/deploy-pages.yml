@@ -29,13 +29,12 @@ jobs:
           mkdir -p scripts builds/web
           cat patches/main.part00 patches/main.part01 patches/main.part02 patches/main.part03 patches/main.part04 patches/main.part05 patches/main.part06 patches/main.part07 patches/main.part08 patches/main.part09 patches/main.part10 > scripts/main.gd
           cp patches/world_scene.gd scripts/world_scene.gd
+          rm -f patches/world_scene.gd
           find scripts -name '*.uid' -delete
           python3 - <<'PY'
           from pathlib import Path
           p = Path('scripts/main.gd')
           s = p.read_text()
-          # The compact browser test uses Godot's built-in font so the runtime
-          # does not depend on editor-only font assets from the original archive.
           s = s.replace('\ttheme_value.default_font = load("res://assets/Body.ttf")\n', '')
           s = s.replace('\tvalue.add_theme_font_override("font",load("res://assets/Heading.ttf"))\n', '')
           s = s.replace('\tcap.add_theme_font_override("font",load("res://assets/Heading.ttf"))\n', '')
