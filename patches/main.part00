@@ -1,0 +1,93 @@
+extends Control
+
+const Rules = preload("res://scripts/rules.gd")
+const Content = preload("res://scripts/content_service.gd")
+const Save = preload("res://scripts/save_service.gd")
+const World = preload("res://scripts/world_scene.gd")
+const PAPER := Color("f7efdf")
+const INK := Color("203842")
+const MUTED := Color("6b796f")
+const GOLD := Color("ddb36f")
+var rules = Rules.new()
+var content = Content.new()
+var save = Save.new()
+var world: JourneyWorld
+var ui: Control
+var screen := "home"
+var level := 0
+var round_questions: Array = []
+var question_index := 0
+var attempt_id := ""
+var daily_date := ""
+var hud: Label
+var gap_bar: ProgressBar
+var status_label: Label
+var think_button: Button
+var clue_box: VBoxContainer
+var answer_buttons: Array = []
+var profile := "standard"
+var tutorial_step := 0
+var previous_screen := "home"
+var resume_delay := 0.0
+var toast := ""
+var run_notice := ""
+var run_notice_left := 0.0
+var tone: AudioStreamPlayer
+var tone_playback: AudioStreamGeneratorPlayback
+var tone_left := 0.0
+var tone_frequency := 440.0
+var tone_phase := 0.0
+var motion_accum := 0.0
+var save_clock := 0.0
+var web_bridge: Object
+var web_api: Variant
+var web_callback: Variant
+
+func _ready() -> void:
+	var theme_value := Theme.new()
+	theme_value.default_font = load("res://assets/Body.ttf")
+	theme_value.default_font_size = 20
+	theme = theme_value
+	profile = str(save.data.settings.profile)
+	world = World.new()
+	world.rules = rules
+	add_child(world)
+	world.collected.connect(func(): beep(720,0.07))
+	world.stumbled.connect(func(): beep(180,0.1))
+	ui = Control.new()
+	ui.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	add_child(ui)
+	tone = AudioStreamPlayer.new()
+	var generator := AudioStreamGenerator.new()
+	generator.mix_rate = 22050
+	generator.buffer_length = 0.10
+	tone.stream = generator
+	tone.playback_type = AudioServer.PLAYBACK_TYPE_STREAM
+	tone.volume_db = -19
+	add_child(tone)
+	if DisplayServer.get_name() != "headless":
+		tone.play()
+		tone_playback = tone.get_stream_playback()
+	resized.connect(_resize)
+	if save.recovered:
+		toast = "Your last valid saved progress was recovered."
+	render_home()
+	if OS.has_feature("web"):
+		web_bridge = Engine.get_singleton("JavaScriptBridge")
+		web_bridge.eval("window.BibleWorldAgent = window.BibleWorldAgent || {}",true)
+		web_api = web_bridge.get_interface("BibleWorldAgent")
+		web_callback = web_bridge.create_callback(_web_action)
+		web_api.invoke = web_callback
+
+func _web_action(args: Array) -> void:
+	var request: Variant = JSON.parse_string(str(args[0])) if args.size() == 1 else null
+	var error := ""
+	if not request is Dictionary or request.get("action","") not in ["read","pause","resume"]:
+		error = "Unsupported game action"
+	elif request.action == "pause":
+		if screen not in ["play","feedback"]:error = "No active journey to pause"
+		else:pause_game()
+	elif request.action == "resume":
+		if screen != "pause":error = "Journey is not paused"
+		else:resume_game()
+	var view := {"screen":screen,"phase":rules.state,"mode":r
