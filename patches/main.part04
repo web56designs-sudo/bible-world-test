@@ -1,0 +1,76 @@
+★ Perfect" if stars&2 else "") + ("   ★ Scrolls" if stars&4 else ""),15,MUTED))
+	box.add_child(label("Three worlds are playable in this first build. More roads will follow after player testing.",16,MUTED))
+	box.add_child(button("← Home",render_home,false,true))
+
+func start_attempt(p_mode: String, p_level: int) -> void:
+	level = clampi(p_level,0,5)
+	profile = str(save.data.settings.profile)
+	daily_date = str(Time.get_date_string_from_system())
+	var recent: Array = save.data.recent
+	var seed_value := -1
+	if p_mode == "daily":
+		seed_value = abs((daily_date+JourneyRules.CONTENT_VERSION).hash())
+		level = (seed_value%3)*2
+		recent = []
+	round_questions = content.make_round(int(level/2),recent,seed_value)
+	question_index = 0
+	attempt_id = str(Time.get_unix_time_from_system()) + ":" + str(randi())
+	rules.start(p_mode,profile)
+	world.reset_segment()
+	snapshot()
+	render_play()
+
+func next_question() -> void:
+	if question_index >= round_questions.size():
+		if rules.mode == "endless":
+			var next_world: int = content.rng.randi_range(0,int(save.data.unlocked/2))
+			level = next_world*2
+			round_questions = content.make_round(next_world,save.data.recent)
+			question_index = 0
+		else:
+			finish_attempt()
+			return
+	rules.begin_question(round_questions[question_index])
+	question_index += 1
+	snapshot()
+	render_play()
+
+func render_play() -> void:
+	var question_visible: bool = rules.state != "running"
+	clear_screen("play",250 if question_visible else 320)
+	var pause := button("Ⅱ",pause_game,false,true)
+	pause.position = Vector2(size.x-74,15)
+	pause.size = Vector2(50,48)
+	ui.add_child(pause)
+	hud = label("",17,INK)
+	hud.position = Vector2(22,22)
+	hud.size.x = size.x-102
+	ui.add_child(hud)
+	var name_label := label(content.worlds[int(level/2)].name.to_upper(),14,MUTED)
+	name_label.position = Vector2(22,64)
+	name_label.size.x = size.x-44
+	ui.add_child(name_label)
+	var box := panel(225 if question_visible else 295)
+	if rules.state == "running":
+		box.add_child(label("KEEP MOVING",14,MUTED))
+		if run_notice != "":
+			box.add_child(label(run_notice,18,Color("57735c")))
+		box.add_child(heading("The next clue is ahead.",28))
+		box.add_child(label("Collect the scrolls. Jump over rocks.\nThe storm is following your footsteps.",22,MUTED))
+		spacer(box,28)
+		box.add_child(button("Jump  ↑",func(): world.jump(),true))
+		box.add_child(label("SPACE to jump · T to think · 1–4 to answer",14,MUTED))
+		spacer(box,20)
+		box.add_child(label("You can stop. The storm won’t.",21,INK))
+		box.add_child(label("Need a quieter pace? Relaxed and Practice timing are available in Settings.",17,MUTED))
+	else:
+		var q: Dictionary = rules.question
+		var cap := HBoxContainer.new()
+		box.add_child(cap)
+		var category := label(q.category.to_upper() + "  /  " + q.prompt,18,MUTED)
+		category.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		cap.add_child(category)
+		status_label = label("",15,MUTED)
+		status_label.autowrap_mode = TextServer.AUTOWRAP_OFF
+		cap.add_child(status_label)
+		gap_bar = ProgressB
