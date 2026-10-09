@@ -29,6 +29,51 @@ jobs:
           mkdir -p scripts builds/web
           cp patches/world_scene.gd scripts/world_scene.gd
           find scripts -name '*.uid' -delete
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path('scripts/main.gd')
+          s = p.read_text()
+          start = s.index('func _process(delta: float) -> void:')
+          end = s.index('func _unhandled_key_input(event: InputEvent) -> void:')
+          clean_process = '''func _process(delta: float) -> void:
+          \tif not is_instance_valid(ui):
+          \t\treturn
+          \tif resume_delay > 0:
+          \t\tresume_delay -= delta
+          \t\tworld.queue_redraw()
+          \t\tif is_instance_valid(status_label):
+          \t\t\tstatus_label.text = "Ready… " + str(ceili(resume_delay))
+          \t\tif resume_delay <= 0:
+          \t\t\trules.resume()
+          \t\t\tif rules.state != "feedback":
+          \t\t\t\trender_play()
+          \t\t\telse:
+          \t\t\t\trender_feedback()
+          \t\treturn
+          \tvar event: String = rules.tick(delta)
+          \tworld.reduced_motion = not save.data.settings.motion
+          \tworld.step(delta)
+          \tif event == "checkpoint":
+          \t\tnext_question()
+          \telif event == "timeout":
+          \t\tresolved_question()
+          \tif run_notice_left > 0:
+          \t\trun_notice_left = maxf(0.0, run_notice_left - delta)
+          \t\tif run_notice_left <= 0 and screen == "play" and rules.state == "running":
+          \t\t\trun_notice = ""
+          \t\t\trender_play()
+          \tif screen == "play":
+          \t\tupdate_hud()
+          \tfill_sound()
+          \tif screen == "play":
+          \t\tsave_clock += delta
+          \t\tif save_clock >= 2.0:
+          \t\t\tsave_clock = 0.0
+          \t\t\tsnapshot()
+
+          '''
+          p.write_text(s[:start] + clean_process + s[end:])
+          PY
           test -s project.godot
           test -s export_presets.cfg
           test -s scenes/main.tscn
@@ -47,19 +92,25 @@ jobs:
           use-dotnet: false
           include-templates: true
 
-      - name: Import project
-        run: godot --headless --editor --quit
+      - name: Import project and reject script errors
+        run: |
+          set -o pipefail
+          godot --headless --editor --quit 2>&1 | tee godot-import.log
+          if grep -q "SCRIPT ERROR" godot-import.log; then exit 1; fi
 
-      - name: Export Web build
-        run: godot --headless --export-release Web builds/web/index.html
+      - name: Export Web build and reject script errors
+        run: |
+          set -o pipefail
+          godot --headless --export-release Web builds/web/index.html 2>&1 | tee godot-export.log
+          if grep -q "SCRIPT ERROR" godot-export.log; then exit 1; fi
+          test -s builds/web/index.html
 
       - name: Disable Jekyll
         run: touch builds/web/.nojekyll
 
       - name: Configure Pages
+        continue-on-error: true
         uses: actions/configure-pages@v5
-        with:
-          enablement: true
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
