@@ -1,0 +1,65 @@
+t",confirm_restart))
+	box.add_child(button("Save and return home",func(): snapshot();render_home()))
+
+func resume_game() -> void:
+	clear_screen("play",world.size.y)
+	status_label = heading("Ready…",32)
+	status_label.position = Vector2(24,370)
+	ui.add_child(status_label)
+	resume_delay = 2.0
+
+func confirm_restart() -> void:
+	var confirm := ConfirmationDialog.new()
+	confirm.dialog_text = "Restart this attempt? Permanent unlocks and discoveries will be kept."
+	confirm.title = "Restart attempt"
+	confirm.confirmed.connect(func(): start_attempt(rules.mode,level))
+	add_child(confirm)
+	confirm.popup_centered(Vector2i(470,180))
+	confirm.canceled.connect(func():confirm.queue_free())
+
+func snapshot() -> void:
+	save.data.active = {"attempt_id":attempt_id,"level":level,"questions":round_questions,"question_index":question_index,"daily_date":daily_date,"content_version":JourneyRules.CONTENT_VERSION,"rules":rules.snapshot(),"world":world.snapshot()}
+	save.write()
+
+func restore_attempt() -> void:
+	var active: Dictionary = save.data.active
+	if active.get("content_version","") != JourneyRules.CONTENT_VERSION:
+		save.data.active = {}
+		save.write()
+		toast = "A fresh journey is ready after the content update."
+		render_home()
+		return
+	attempt_id = active.attempt_id
+	level = int(active.level)
+	round_questions = active.questions
+	question_index = int(active.question_index)
+	daily_date = active.daily_date
+	rules.restore(active.rules)
+	profile = rules.profile
+	world.restore(active.get("world",{}))
+	rules.pause()
+	previous_screen = "feedback" if rules.previous_state=="feedback" else "play"
+	resume_game()
+
+func render_tutorial() -> void:
+	rules.state = "idle"
+	clear_screen("tutorial",300)
+	top_caption("HOW TO PLAY    /    "+str(tutorial_step+1)+" OF 4")
+	var titles := ["Follow the road.","Let knowledge lead.","You can stop.","The storm won’t."]
+	var descriptions := ["Your traveller runs automatically. Tap Jump to clear a rock. Scrolls are optional rewards; bumping a rock will not cost a knowledge shield.","At a checkpoint, read three clues about a person, a place or an event. Tap one of the four answers. Correct answers open the road.","Tap Stop to think when you need to concentrate. Your traveller stops, but the dust storm keeps approaching. Tap Resume running to keep moving.","A wrong answer or being caught uses one shield. Three misses restart this level. Answer 8 of 10 correctly to unlock the next road permanently."]
+	var box := panel(275)
+	box.add_child(heading(titles[tutorial_step],35))
+	box.add_child(label(descriptions[tutorial_step],24,MUTED))
+	spacer(box,12)
+	box.add_child(label("The Ⅱ Pause button freezes everything, including the storm. Calls and interruptions will not cost you a shield.",19,INK))
+	box.add_child(button("Start my journey  →" if tutorial_step==3 else "Next  →",func():
+		if tutorial_step<3:
+			tutorial_step+=1
+			render_tutorial()
+		else:
+			save.data.tutorial = true
+			save.write()
+			tutorial_step=0
+			start_attempt("campaign",0)
+	,true))
+	box.
