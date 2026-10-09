@@ -1,0 +1,53 @@
+add_child(button("← Home",render_home,false,true))
+
+func render_settings() -> void:
+	rules.state = "idle"
+	clear_screen("settings",180)
+	top_caption("YOUR JOURNEY    /    SETTINGS")
+	var box := panel(155,true)
+	box.add_child(heading("Choose your pace",31))
+	box.add_child(label("Every pace can unlock campaign levels. Scores are stored separately.",18,MUTED))
+	for p in [["standard","Standard · the storm approaches"],["relaxed","Relaxed · extra reading time"],["practice","Practice · no storm deadline"]]:
+		box.add_child(button(("✓  " if save.data.settings.profile==p[0] else "")+p[1],func():
+			save.data.settings.profile=p[0]
+			save.write()
+			render_settings()
+		,save.data.settings.profile==p[0],true))
+	for p in [["sound","Sound effects"],["motion","Full animation"],["large_text","Larger clue text"]]:
+		box.add_child(button(p[1]+("  · On" if save.data.settings[p[0]] else "  · Off"),func():
+			save.data.settings[p[0]]=not save.data.settings[p[0]]
+			save.write()
+			render_settings()
+		,false,true))
+	box.add_child(button("About this playable build",render_about,false,true))
+	box.add_child(button("Reset all progress",confirm_reset,false,true))
+	box.add_child(button("← Home",render_home,false,true))
+
+func confirm_reset() -> void:
+	var confirm := ConfirmationDialog.new()
+	confirm.title = "Reset all progress"
+	confirm.dialog_text = "Delete all saved levels, stars, discoveries and scrolls on this device? This cannot be undone."
+	add_child(confirm)
+	confirm.confirmed.connect(func():save.data=save.defaults();save.write();render_home();confirm.queue_free())
+	confirm.canceled.connect(func():confirm.queue_free())
+	confirm.popup_centered(Vector2i(470,200))
+
+func render_about() -> void:
+	clear_screen("about",180)
+	top_caption("BIBLE WORLD    /    BUILD 0.2.1 TEST")
+	var box := panel(155,true)
+	box.add_child(heading("An adventure in progress",30))
+	box.add_child(label("This first playable build includes three worlds, six campaign levels and 60 Bible questions. Endless runs, daily journeys, discoveries and saved progress are ready to try.",21,MUTED))
+	box.add_child(heading("Content review",24))
+	box.add_child(label("Questions include Scripture references and original paraphrases. They are draft content awaiting a knowledgeable human editor. Please check the references if a clue seems unclear.",21,MUTED))
+	box.add_child(heading("Offline and private",24))
+	box.add_child(label("No account, advertising, purchases or tracking. Progress is stored on this device. This game is a learning adventure, and your score is not a measure of your faith.",21,MUTED))
+	box.add_child(label("Original procedural artwork and sound. DejaVu fonts. Built with Godot 4.5.2.",16,MUTED))
+	box.add_child(button("Open source licenses",render_licenses,false,true))
+	box.add_child(button("← Settings",render_settings,false,true))
+
+func render_licenses() -> void:
+	clear_screen("licenses",180)
+	top_caption("BIBLE WORLD    /    THIRD PARTY NOTICES")
+	var box := panel(155,true)
+	box.add_child(heading("Ope
