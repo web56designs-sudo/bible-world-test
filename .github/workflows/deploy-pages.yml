@@ -21,26 +21,25 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Restore 0.2.2 test source
+      - name: Restore verified 0.2.2 test source
         run: |
           rm -rf scripts content assets scenes builds export_presets.cfg project.godot source.zip
           cat source.part00 source.part01 source.part02 source.part03 source.part04 source.part05 | base64 -d > source.zip
           unzip -o source.zip || true
           mkdir -p scripts builds/web
+          cat patches/main.part00 patches/main.part01 patches/main.part02 patches/main.part03 patches/main.part04 patches/main.part05 patches/main.part06 patches/main.part07 patches/main.part08 patches/main.part09 patches/main.part10 > scripts/main.gd
           cp patches/world_scene.gd scripts/world_scene.gd
           find scripts -name '*.uid' -delete
           python3 - <<'PY'
           from pathlib import Path
           p = Path('scripts/main.gd')
           s = p.read_text()
-          s = s.replace(
-              '\t\t\trender_play() if rules.state != "feedback" else render_feedback()',
-              '\t\t\tif rules.state != "feedback":\n\t\t\t\trender_play()\n\t\t\telse:\n\t\t\t\trender_feedback()'
-          )
-          s = s.replace(
-              '\tif screen == "play":update_hud()',
-              '\tif screen == "play":\n\t\tupdate_hud()'
-          )
+          # The compact browser test uses Godot's built-in font so the runtime
+          # does not depend on editor-only font assets from the original archive.
+          s = s.replace('\ttheme_value.default_font = load("res://assets/Body.ttf")\n', '')
+          s = s.replace('\tvalue.add_theme_font_override("font",load("res://assets/Heading.ttf"))\n', '')
+          s = s.replace('\tcap.add_theme_font_override("font",load("res://assets/Heading.ttf"))\n', '')
+          s = s.replace('\tlogo.add_theme_font_override("font",load("res://assets/Display.ttf"))\n', '')
           p.write_text(s)
           PY
           test -s project.godot
