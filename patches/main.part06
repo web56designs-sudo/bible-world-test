@@ -1,0 +1,54 @@
+ else ("The storm caught up." if result.timeout else "A wrong turn. Try the next clue.")
+	box.add_child(label("CORRECT  +"+str(result.points) if result.correct else "ONE SHIELD USED",15,Color("57735c") if result.correct else Color("a96543")))
+	box.add_child(heading(title,29))
+	box.add_child(heading(content.correct_label(rules.question),27))
+	box.add_child(label(rules.question.explanation,21,MUTED))
+	box.add_child(label("READ THE STORY\n"+rules.question.reference_label,17,INK))
+	box.add_child(label(str(rules.correct)+" correct  ·  "+str(rules.shields())+" shields remaining",17,MUTED))
+	spacer(box,6)
+	box.add_child(button("See your result  →" if rules.finished() else "Continue running  →",continue_attempt,true))
+	box.add_child(button("Ⅱ  Pause",pause_game,false,true))
+
+func continue_attempt() -> void:
+	if rules.finished():finish_attempt();return
+	rules.begin_run()
+	world.reset_segment()
+	snapshot()
+	render_play()
+
+func finish_attempt() -> void:
+	save.grant(attempt_id,level,rules,daily_date)
+	rules.state = "result"
+	render_result()
+
+func render_result() -> void:
+	clear_screen("result",300)
+	top_caption("YOUR JOURNEY    /    THIS ATTEMPT")
+	var box := panel(275,true)
+	box.add_child(label("LEVEL COMPLETED" if rules.passed() else "JOURNEY COMPLETE" if rules.mode=="endless" else "TRY THIS LEVEL AGAIN",15,MUTED))
+	box.add_child(heading("A road remembered." if rules.passed() else "Every journey teaches.",31))
+	box.add_child(heading(str(rules.correct)+" / "+str(rules.resolved)+" correct",38))
+	box.add_child(label(str(rules.score)+" knowledge points  ·  "+str(rules.scrolls)+" scrolls\n"+str(int(rules.distance))+" metres travelled",20,MUTED))
+	if rules.mode=="campaign":
+		box.add_child(label("The next level is now unlocked." if rules.passed() and level<5 else "All six starter levels completed. Try Endless Journey." if rules.passed() else "You need 8 correct out of 10. Completed levels and discoveries are kept.",19,MUTED))
+	if rules.mode=="daily":box.add_child(label("Your first daily result is saved. Replays are for practice.",18,MUTED))
+	spacer(box)
+	if rules.passed() and rules.mode=="campaign" and level<5:box.add_child(button("Next level  →",func(): start_attempt("campaign",level+1),true))
+	else:box.add_child(button("Run again  →",func(): start_attempt(rules.mode,level),true))
+	box.add_child(button("Review the clues",render_review))
+	box.add_child(button("← Home",render_home,false,true))
+
+func pause_game() -> void:
+	if screen not in ["play","feedback"]:return
+	previous_screen = screen
+	rules.pause()
+	snapshot()
+	var frozen_height: float = world.size.y
+	clear_screen("pause",frozen_height)
+	top_caption("PAUSED    /    EVEN THE STORM RESTS")
+	var box := panel(frozen_height-25)
+	box.add_child(heading("Take a breath.",36))
+	box.add_child(label("Your traveller and the storm are both paused.\nYou will resume exactly where you stopped.",22,MUTED))
+	spacer(box,12)
+	box.add_child(button("Resume journey  →",resume_game,true))
+	box.add_child(button("Restart this attemp
