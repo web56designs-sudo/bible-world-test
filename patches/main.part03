@@ -1,0 +1,67 @@
+ = height
+	box.add_child(space)
+
+func top_caption(text: String) -> void:
+	var cap := label(text,16,INK)
+	cap.position = Vector2(24,21)
+	cap.size.x = size.x-48
+	cap.add_theme_font_override("font",load("res://assets/Heading.ttf"))
+	ui.add_child(cap)
+
+func render_home() -> void:
+	rules.state = "idle"
+	clear_screen("home",size.y*0.44)
+	top_caption("BIBLE WORLD    /    THE JOURNEY BEGINS")
+	var logo := label("Bible World",48,INK)
+	logo.add_theme_font_override("font",load("res://assets/Display.ttf"))
+	logo.position = Vector2(24,68)
+	logo.size.x = size.x-48
+	ui.add_child(logo)
+	var tagline := label("You can stop. The storm won’t.",21,INK)
+	tagline.position = Vector2(26,132)
+	tagline.size.x = size.x-52
+	ui.add_child(tagline)
+	var box := panel(size.y*0.42,true)
+	box.add_child(label("KNOW THE PEOPLE · PLACES · EVENTS",14,MUTED))
+	box.add_child(heading("Your knowledge\nopens the road.",31))
+	box.add_child(label("Run through the Bible world. Stop to think.\nStay ahead of the rolling storm.",19,MUTED))
+	if not save.data.active.is_empty():box.add_child(button("Resume your journey",restore_attempt,true))
+	box.add_child(button("Continue the journey  →",render_map,true))
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation",10)
+	box.add_child(row)
+	var daily := button("Daily journey",func(): start_attempt("daily",0),false,true)
+	daily.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	row.add_child(daily)
+	var endless := button("Endless run",func(): start_attempt("endless",int(save.data.unlocked)),false,true)
+	endless.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	endless.disabled = not save.data.completed.has("0")
+	row.add_child(endless)
+	var bottom := HBoxContainer.new()
+	box.add_child(bottom)
+	for pair in [["Discoveries",render_discoveries],["Settings",render_settings],["How to play",render_tutorial]]:
+		var b := button(pair[0],pair[1],false,true)
+		b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		b.add_theme_font_size_override("font_size",16)
+		bottom.add_child(b)
+	box.add_child(label("EARLY PLAYABLE BUILD 0.1   ·   60 QUESTIONS",13,MUTED))
+	if toast != "":box.add_child(label(toast,15,MUTED));toast=""
+
+func render_map() -> void:
+	rules.state = "idle"
+	clear_screen("map",220)
+	top_caption("THE JOURNEY    /    YOUR PATH")
+	var box := panel(190,true)
+	box.add_child(heading("Choose your next road"))
+	box.add_child(label("10 questions · 8 correct to pass\nCompleted levels stay unlocked.",18,MUTED))
+	for i in 6:
+		var world_data: Dictionary = content.worlds[int(i/2)]
+		var unlocked := i <= int(save.data.unlocked)
+		var title: String = str(i+1) + "   " + world_data.name + (" I" if i%2==0 else " II")
+		if not unlocked:title += "   · Locked"
+		var b := button(title,func(): start_attempt("campaign",i),unlocked and i==int(save.data.unlocked))
+		b.disabled = not unlocked
+		b.add_theme_font_size_override("font_size",18)
+		box.add_child(b)
+		var stars: int = int(save.data.stars.get(str(i),0))
+		if stars>0:box.add_child(label("★ Passed" + ("   
