@@ -1,0 +1,23 @@
+name: Inspect reconstructed main script
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Reconstruct and print problem area
+        run: |
+          cat source.part00 source.part01 source.part02 source.part03 source.part04 source.part05 | base64 -d > source.zip
+          unzip -o source.zip || true
+          echo '--- functions ---'
+          grep -n '^func ' scripts/main.gd || true
+          echo '--- lines 118-150 ---'
+          nl -ba scripts/main.gd | sed -n '118,150p'
