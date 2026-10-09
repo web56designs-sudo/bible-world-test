@@ -1,0 +1,82 @@
+ules.mode,"profile":rules.profile,"correct":rules.correct,"resolved":rules.resolved,"shields":rules.shields(),"score":rules.score,"resuming":resume_delay>0}
+	if screen == "play" and rules.state in ["preparation","question_running","thinking"]:
+		view["question"] = {"prompt":rules.question.prompt,"clues":rules.question.clues,"options":rules.question.options}
+	if error != "":view["error"] = error
+	web_api.result = JSON.stringify(view)
+
+func _resize() -> void:
+	if not is_instance_valid(ui):return
+	world.size.x = size.x
+	if screen == "play":render_play()
+	elif screen == "feedback":render_feedback()
+	elif screen == "home":render_home()
+
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_WM_CLOSE_REQUEST and screen in ["play","feedback","pause"]:
+		snapshot()
+	if what == NOTIFICATION_APPLICATION_PAUSED or what == NOTIFICATION_APPLICATION_FOCUS_OUT:
+		if is_instance_valid(ui) and screen in ["play","feedback"]:
+			pause_game()
+	if what == NOTIFICATION_WM_GO_BACK_REQUEST:
+		if screen in ["play","feedback"]:pause_game()
+		else:render_home()
+
+func _process(delta: float) -> void:
+	if not is_instance_valid(ui):return
+	if resume_delay > 0:
+		resume_delay -= delta
+		world.queue_redraw()
+		if is_instance_valid(status_label):status_label.text = "Ready… " + str(ceili(resume_delay))
+		if resume_delay <= 0:
+			rules.resume()
+			if rules.state != "feedback":
+				render_play()
+			else:
+				render_feedback()
+		return
+	var event: String = rules.tick(delta)
+	world.reduced_motion = not save.data.settings.motion
+	world.step(delta)
+	if event == "checkpoint":next_question()
+	elif event == "timeout":resolved_question()
+	if run_notice_left > 0:
+		run_notice_left = maxf(0.0, run_notice_left - delta)
+		if run_notice_left <= 0 and screen == "play" and rules.state == "running":
+			run_notice = ""
+			render_play()
+	if screen == "play":
+		update_hud()
+	fill_sound()
+	if screen == "play":
+		save_clock += delta
+		if save_clock >= 2.0:
+			save_clock = 0.0
+			snapshot()
+
+func _unhandled_key_input(event: InputEvent) -> void:
+	if event is InputEventKey and event.pressed and not event.echo:
+		if event.keycode == KEY_ESCAPE:
+			if screen in ["play","feedback"]:pause_game()
+			elif screen == "pause":resume_game()
+			else:render_home()
+		elif screen == "play":
+			if event.keycode == KEY_SPACE:world.jump()
+			elif event.keycode == KEY_T:toggle_think()
+			elif event.keycode in [KEY_1,KEY_2,KEY_3,KEY_4] and rules.state in ["preparation","question_running","thinking"]:
+				choose_answer(str(rules.question.options[event.keycode-KEY_1].id))
+
+func clear_screen(name: String, height: float) -> void:
+	screen = name
+	for child in ui.get_children():
+		ui.remove_child(child)
+		child.queue_free()
+	world.size = Vector2(size.x,height)
+	world.decorative = name not in ["play","feedback","pause","result"]
+	world.world_index = int(level/2)
+	hud = null
+	gap_bar = null
+	status_label = null
+	think_button = null
+	answer_buttons = []
+
+func style(fill: Color, border: Color = Color.TRANSPARENT) -> StyleBoxF
