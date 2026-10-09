@@ -1,0 +1,75 @@
+ar.new()
+		gap_bar.custom_minimum_size.y = 8
+		gap_bar.show_percentage = false
+		gap_bar.add_theme_stylebox_override("background",style(Color("ddcfb7")))
+		gap_bar.add_theme_stylebox_override("fill",style(GOLD))
+		box.add_child(gap_bar)
+		clue_box = VBoxContainer.new()
+		clue_box.add_theme_constant_override("separation",6)
+		box.add_child(clue_box)
+		for i in 3:
+			clue_box.add_child(label(str(i+1) + ".  " + q.clues[i],22 if save.data.settings.large_text else 20,INK))
+		spacer(box,0)
+		for i in q.options.size():
+			var opt: Dictionary = q.options[i]
+			var b := button(str(i+1)+"   "+opt.label,func(): choose_answer(str(opt.id)))
+			b.custom_minimum_size.y = 55
+			b.alignment = HORIZONTAL_ALIGNMENT_LEFT
+			b.add_theme_font_size_override("font_size",19)
+			box.add_child(b)
+			answer_buttons.append(b)
+		think_button = button("Stop to think",toggle_think,true,true)
+		box.add_child(think_button)
+	update_hud()
+
+func update_hud() -> void:
+	if is_instance_valid(hud):
+		var count_text := str(rules.resolved+1) if rules.mode=="endless" else str(mini(10,rules.resolved+1))+"/10"
+		hud.text = "♥ ".repeat(rules.shields()) + "   " + str(rules.score) + " pts   ·   Q " + count_text
+	if is_instance_valid(gap_bar):gap_bar.value = 100 * rules.gap / rules.initial_gap
+	if is_instance_valid(status_label):
+		status_label.text = "No deadline" if profile=="practice" else ("Get ready" if rules.state=="preparation" else ("STORM CLOSE" if rules.gap/rules.initial_gap<0.25 else "Lead +"+str(int(rules.lead))))
+	if is_instance_valid(think_button):
+		think_button.text = "Resume running  →" if rules.state=="thinking" else "Stop to think"
+		think_button.disabled = rules.state=="preparation"
+
+func toggle_think() -> void:
+	rules.toggle_think()
+	update_hud()
+
+func choose_answer(id: String) -> void:
+	rules.answer(id)
+	if rules.state == "feedback":resolved_question()
+
+func resolved_question() -> void:
+	beep(880 if rules.result.correct else 170,0.16)
+	if rules.result.correct:
+		world.celebrate = 1
+		if rules.question.subject_id not in save.data.discovered:
+			save.data.discovered.append(rules.question.subject_id)
+	save.data.recent.append(rules.question.question_id)
+	if save.data.recent.size()>30:save.data.recent.pop_front()
+	if rules.result.correct:
+		# Correct recognition should preserve momentum. Show a brief Scripture
+		# confirmation while the next running segment begins; deeper reading
+		# remains available through Discoveries and Review.
+		run_notice = "✓ Correct — " + content.correct_label(rules.question) + "  ·  " + str(rules.question.reference_label)
+		run_notice_left = 2.5
+		if rules.finished():
+			snapshot()
+			finish_attempt()
+		else:
+			rules.begin_run()
+			world.reset_segment()
+			snapshot()
+			render_play()
+		return
+	snapshot()
+	render_feedback()
+
+func render_feedback() -> void:
+	clear_screen("feedback",320)
+	top_caption("THE STORM WAITS WHILE YOU LEARN")
+	var box := panel(295,true)
+	var result: Dictionary = rules.result
+	var title := "You opened the road." if result.correct
