@@ -1,0 +1,64 @@
+n source acknowledgements",27))
+	for name in ["Godot-LICENSE.txt","DejaVu-Copyright.txt","Godot-COPYRIGHT.txt"]:
+		box.add_child(heading(name.replace(".txt",""),22))
+		box.add_child(label(FileAccess.get_file_as_string("res://assets/licenses/"+name),16,INK))
+	box.add_child(button("← About",render_about,false,true))
+
+func render_discoveries(category: String = "all") -> void:
+	rules.state = "idle"
+	clear_screen("discoveries",200)
+	top_caption("YOUR DISCOVERIES    /    "+str(save.data.discovered.size())+" OF 60")
+	var box := panel(175,true)
+	box.add_child(heading("A world to remember",30))
+	box.add_child(label("Answer correctly to add a person, place or event to your collection.",19,MUTED))
+	var row := HBoxContainer.new()
+	box.add_child(row)
+	for pair in [["all","All"],["person","People"],["place","Places"],["event","Events"]]:
+		var b := button(pair[1],func():render_discoveries(pair[0]),category==pair[0],true)
+		b.size_flags_horizontal=Control.SIZE_EXPAND_FILL
+		b.add_theme_font_size_override("font_size",16)
+		row.add_child(b)
+	for q in content.questions:
+		if q.subject_id in save.data.discovered and (category=="all" or q.category==category):
+			box.add_child(button(content.correct_label(q),func():render_entry(q),false,true))
+	if save.data.discovered.is_empty():box.add_child(label("Your first discovery is just one correct answer away.",23,MUTED))
+	box.add_child(button("← Home",render_home,false,true))
+
+func render_entry(q: Dictionary) -> void:
+	clear_screen("entry",220)
+	top_caption("DISCOVERY    /    "+q.category.to_upper())
+	var box := panel(195,true)
+	box.add_child(heading(content.correct_label(q),34))
+	box.add_child(label(q.explanation,23,MUTED))
+	box.add_child(label("READ THE STORY\n"+q.reference_label,20,INK))
+	box.add_child(button("← Discoveries",render_discoveries,false,true))
+
+func render_review() -> void:
+	clear_screen("review",180)
+	top_caption("LOOK BACK    /    LEARN AT YOUR OWN PACE")
+	var box := panel(155,true)
+	box.add_child(heading("The clues you met",30))
+	for item in rules.history:
+		var q: Dictionary = item.question
+		box.add_child(label("✓ CORRECT" if item.result.correct else "MISSED",14,Color("537358") if item.result.correct else Color("a36543")))
+		box.add_child(heading(content.correct_label(q),24))
+		box.add_child(label("\n".join(q.clues),19,MUTED))
+		box.add_child(label(q.reference_label,16,INK))
+		spacer(box,12)
+	box.add_child(button("← Results",render_result,false,true))
+
+func beep(frequency: float, duration: float) -> void:
+	if not save.data.settings.sound:return
+	tone_frequency = frequency
+	tone_left = duration
+
+func fill_sound() -> void:
+	if tone_playback == null:return
+	var count := tone_playback.get_frames_available()
+	for i in count:
+		var amplitude := 0.0
+		if tone_left>0 and save.data.settings.sound and rules.state!="paused":
+			amplitude = sin(tone_phase*TAU)*minf(0.35,tone_left*8)
+			tone_phase = fmod(tone_phase + tone_frequency / 22050.0,1)
+			tone_left -= 1.0/22050
+		tone_playback.push_frame(Vector2.ONE*amplitu
