@@ -1,0 +1,2 @@
+extends PrismMesh
+class_name OctahedronMesh

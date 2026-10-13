@@ -1,0 +1,56 @@
+[
+  {
+    "id":"moses_bush",
+    "clues":["I was raised in Pharaoh's household.","I fled Egypt after killing an Egyptian.","God called me from a burning bush."],
+    "options":["Moses","Aaron","Joseph","Joshua"],
+    "answer":0,
+    "reference":"Exodus 2:10-15; 3:1-10",
+    "explanation":"Moses was raised in Pharaoh's household, fled to Midian, and later encountered God at the burning bush.",
+    "difficulty":1.0
+  },
+  {
+    "id":"passover",
+    "clues":["Israelite families marked their doorframes with blood.","They ate a meal in haste.","This happened before Israel left Egypt."],
+    "options":["The Passover","The Day of Atonement","The Feast of Weeks","The Sabbath"],
+    "answer":0,
+    "reference":"Exodus 12:1-32",
+    "explanation":"The first Passover took place in Egypt before the Exodus. Israelite households followed God's instructions for the lamb, meal and marked doorframes.",
+    "difficulty":1.0
+  },
+  {
+    "id":"pharaoh",
+    "clues":["I repeatedly refused to let Israel go.","Moses and Aaron spoke to me.","Egypt suffered plagues during my resistance."],
+    "options":["Pharaoh","Abimelech","Nebuchadnezzar","Herod"],
+    "answer":0,
+    "reference":"Exodus 5-12",
+    "explanation":"Pharaoh resisted Moses' demand to let Israel go, and the narrative of Exodus describes the plagues that followed.",
+    "difficulty":0.9
+  },
+  {
+    "id":"red_sea",
+    "clues":["Israel was trapped between an army and water.","Moses stretched out his hand.","Israel crossed on dry ground."],
+    "options":["The Red Sea crossing","Crossing the Jordan","Noah's flood","Paul's shipwreck"],
+    "answer":0,
+    "reference":"Exodus 14:10-31",
+    "explanation":"Exodus 14 describes Israel crossing through the sea on dry ground after Moses stretched out his hand.",
+    "difficulty":1.0
+  },
+  {
+    "id":"manna",
+    "clues":["I appeared in the wilderness as food.","Israel gathered me in the morning.","They were told not to keep the daily portion overnight."],
+    "options":["Manna","Quail","Unleavened bread","Figs"],
+    "answer":0,
+    "reference":"Exodus 16:13-31",
+    "explanation":"Manna was the bread-like food God provided in the wilderness. Israel gathered it in the morning according to the instructions given.",
+    "difficulty":1.1
+  },
+  {
+    "id":"sinai",
+    "clues":["Israel camped near me after leaving Egypt.","Moses went up to meet God.","The Ten Commandments are associated with me."],
+    "options":["Mount Sinai","Mount Carmel","Mount Zion","Mount Ararat"],
+    "answer":0,
+    "reference":"Exodus 19:1-20:21",
+    "explanation":"Israel camped at Mount Sinai, where Moses went up the mountain and the covenant instructions, including the Ten Commandments, were given.",
+    "difficulty":1.0
+  }
+]
