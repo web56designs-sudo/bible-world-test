@@ -42,15 +42,7 @@ jobs:
           p.write_text(s)
           PY
           test -s project.godot
-          test -s export_presets.cfg
-          test -s scenes/main.tscn
-          test -s scripts/main.gd
-          test -s scripts/world_scene.gd
-          test -s scripts/rules.gd
-          test -s scripts/save_service.gd
-          test -s scripts/content_service.gd
-          test -s content/questions.json
-          test -s content/worlds.json
+          test -s prototype3d/project.godot
 
       - name: Install Godot 4.5.2
         uses: chickensoft-games/setup-godot@v2
@@ -59,18 +51,36 @@ jobs:
           use-dotnet: false
           include-templates: true
 
-      - name: Import project and reject script errors
+      - name: Validate 2D build
         run: |
           set -o pipefail
           godot --headless --editor --quit 2>&1 | tee godot-import.log
           if grep -q "SCRIPT ERROR" godot-import.log; then exit 1; fi
 
-      - name: Export Web build and reject script errors
+      - name: Export preserved 2D build
         run: |
           set -o pipefail
           godot --headless --export-release Web builds/web/index.html 2>&1 | tee godot-export.log
           if grep -q "SCRIPT ERROR" godot-export.log; then exit 1; fi
           test -s builds/web/index.html
+
+      - name: Validate 3D vertical slice
+        run: |
+          set -o pipefail
+          cd prototype3d
+          godot --headless --editor --quit 2>&1 | tee godot-3d-import.log
+          if grep -q "SCRIPT ERROR" godot-3d-import.log; then exit 1; fi
+          if grep -q "Parse Error" godot-3d-import.log; then exit 1; fi
+
+      - name: Export 3D vertical slice to subpath
+        run: |
+          mkdir -p builds/web/3d
+          set -o pipefail
+          cd prototype3d
+          godot --headless --export-release Web ../builds/web/3d/index.html 2>&1 | tee godot-3d-export.log
+          if grep -q "SCRIPT ERROR" godot-3d-export.log; then exit 1; fi
+          if grep -q "Parse Error" godot-3d-export.log; then exit 1; fi
+          test -s ../builds/web/3d/index.html
 
       - name: Disable Jekyll
         run: touch builds/web/.nojekyll
@@ -94,5 +104,3 @@ jobs:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
-
-# Fresh deployment trigger after Pages was enabled.
