@@ -40,6 +40,9 @@ jobs:
           s = s.replace('\tcap.add_theme_font_override("font",load("res://assets/Heading.ttf"))\n', '')
           s = s.replace('\tlogo.add_theme_font_override("font",load("res://assets/Display.ttf"))\n', '')
           p.write_text(s)
+          p3 = Path('prototype3d/scripts/main_v2.gd')
+          s3 = p3.read_text().replace('var avoided := (item.type=="jump" and jump_y>0.82) or (item.type=="slide" and slide_left>0.05)', 'var avoided: bool = (item.type=="jump" and jump_y>0.82) or (item.type=="slide" and slide_left>0.05)')
+          p3.write_text(s3)
           PY
           test -s project.godot
           test -s prototype3d/project.godot
